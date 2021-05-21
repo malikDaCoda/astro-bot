@@ -1,5 +1,0 @@
-discord
-python-dotenv
-bcrypt
-validators
-pycrypto
