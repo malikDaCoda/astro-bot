@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
-    pip3 install discord python-dotenv bcrypt validators pycryptodom && \
+    python3 -m pip install -r requirements.txt && \
     rm -rf /var/lib/apt/lists/*
 
 RUN useradd mate

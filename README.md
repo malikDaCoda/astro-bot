@@ -9,7 +9,7 @@
 2. Install the package dependencies :  
 
 ```bash
-python3 -m pip install discord python-dotenv bcrypt validators pycrypto
+python3 -m pip install -r requirements.txt
 ```
 
 3. Change directory to `app/` :  
