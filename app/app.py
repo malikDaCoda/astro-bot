@@ -35,7 +35,7 @@ users = dict()
 # bot client
 client = Bot(
     command_prefix=commands.when_mentioned_or('!'),
-    description="Mate - The Password Manager Bot",
+    description="Astro - The Password Manager Bot",
     help_command=commands.DefaultHelpCommand(
         no_category="Commands"
     )
@@ -94,12 +94,12 @@ def logged_out():
 
 # Commands
 
-@client.command(name="mate", help="Bot description")
-async def mate(ctx):
+@client.command(name="astro", help="Bot description")
+async def astro(ctx):
     embed = discord.Embed(
-        title="Mate - The Password Manager Bot",
+        title="Astro - The Password Manager Bot",
         description='''\
-This is Mate, a very secure password manager that you can rely on.
+This is Astro, a very secure password manager that you can rely on.
 You can store an endless amount of credentials for FREE!
 You don't risk losing your precious data thanks to OPENSSL, the latest encryption technology.
 Use our app now by DMing the bot and free yourself from the pain of remembering all your complex passwords.''',
@@ -310,7 +310,7 @@ async def logout_inactive():
 async def on_ready():
     for guild in client.guilds:
         print(f"[+] {client.user} connected to {guild}")
-    await client.change_presence(activity=discord.Game(name="!mate"))
+    await client.change_presence(activity=discord.Game(name="!astro"))
 
 @client.listen("on_message")
 async def update_lastactive(message):
