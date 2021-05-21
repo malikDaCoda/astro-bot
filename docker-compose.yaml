@@ -2,19 +2,7 @@ version: '3.5'
 
 services:
   mate:
-    build: ./mate
-    depends_on:
-      - openssl
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 100M
-
-  openssl:
-    build: ./openssl
-    security_opt:
-      - seccomp:./profile.json
+    build: .
     deploy:
       resources:
         limits:

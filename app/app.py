@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 import socket
 import time
+from helpers.encryption import Encryption
 
 load_dotenv()
 
@@ -26,11 +27,6 @@ TOKEN  = os.getenv("DISCORD_TOKEN")
 MIN_LENGTH = 7
 # timeout in minutes for logging out an inactive user
 INACTIVE_TIMEOUT = 15
-# host and port of openssl server
-HOST = os.getenv("SERVER_HOST")
-PORT = int(os.getenv("SERVER_PORT"))
-# characters not allowed in username and password
-NOT_ALLOWED = ['\n']
 
 # Global variables
 
@@ -56,62 +52,26 @@ def hash(password):
 def valid_password(password, hashed):
     return bcrypt.checkpw(password.encode(), hashed)
 
-# parse openssl message
-def parse_message(msg):
-    data = json.loads(msg)
-    if "parse_error" in data:
-        raise ServerError(data["parse_error"])
-
-    if "error" in data:
-        return None, data["error"]
-
-    return data["data"], None
-
-# run a routine in a separate thread
-async def runthread(routine, *args):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(ThreadPoolExecutor(), routine, *args)
-
-# send command to openssl server
-# action is either "encrypt" or "decrypt"
-def openssl_command(action, data, password):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        s.sendall(json.dumps({
-            "action": action,
-            "data": data,
-            "password": password
-        }).encode() + b'\n')
-        recv_data = s.recv(2048)
-
-    return parse_message(recv_data)
-
 # wrapper to encrypt data with password
-async def encrypt(data, password):
-    return await runthread(openssl_command, "encrypt", data, password)
+def encrypt(data, password):
+    e = Encryption(password.encode())
+    return e.encrypt(data.encode()).decode()
 
 # wrapper to decrypt data with password
-async def decrypt(data, password):
-    return await runthread(openssl_command, "decrypt", data, password)
+def decrypt(data, password):
+    e = Encryption(password.encode())
+    return e.decrypt(data.encode()).decode()
 
 # get master password of user
 def get_password(uid):
     if users.get(uid):
-        return users.get("masterpass")
+        return users[uid].get("masterpass")
     return None
 
 # Exceptions
 
 # for authentification failures
 class AuthFailure(commands.errors.CheckFailure):
-    pass
-
-# for encryption/decryption errors
-class EncryptionError(commands.errors.CommandError):
-    pass
-
-# for openssl server errors
-class ServerError(commands.errors.CommandError):
     pass
 
 # Check decorators
@@ -222,12 +182,8 @@ async def view(ctx, url: str=None):
     if url is not None:
         data = EntryHandler.get(ctx.author.id, url)
         if data is not None:
-            username, err = await decrypt(data["username"], masterpass)
-            if err:
-                raise EncryptionError(err)
-            password, err = await decrypt(data["password"], masterpass)
-            if err:
-                raise EncryptionError(err)
+            username = decrypt(data["username"], masterpass)
+            password = decrypt(data["password"], masterpass)
 
             await ctx.send(embed=discord.Embed(
                 title=f":white_check_mark: {url}",
@@ -247,12 +203,8 @@ async def view(ctx, url: str=None):
         data = EntryHandler.getall(ctx.author.id)
         if len(data) > 0 :
             for d in data :
-                username, err = await decrypt(d["username"], masterpass)
-                if err:
-                    raise EncryptionError(err)
-                password, err = await decrypt(d["password"], masterpass)
-                if err:
-                    raise EncryptionError(err)
+                username = decrypt(d["username"], masterpass)
+                password = decrypt(d["password"], masterpass)
 
                 await ctx.send(embed=discord.Embed(
                     title=f":white_check_mark: {d['url']}",
@@ -280,20 +232,13 @@ Example: !add https://discord.com coolUsername 1337password\
 @dm_only()
 @logged_in()
 async def add(ctx, url: str, username: str, password: str):
-    if any(char in username or char in password for char in NOT_ALLOWED):
-        await ctx.send(":x: Character not allowed")
-        return
     if not validators.url(url):
         await ctx.send(":x: Not a valid URL")
         return
 
     masterpass = get_password(ctx.author.id)
-    enc_username, err = await encrypt(username, masterpass)
-    if err:
-        raise EncryptionError(err)
-    enc_password, err = await encrypt(password, masterpass)
-    if err:
-        raise EncryptionError(err)
+    enc_username = encrypt(username, masterpass)
+    enc_password = encrypt(password, masterpass)
 
     added = EntryHandler.add(
         ctx.author.id,
@@ -317,19 +262,11 @@ Example: !update https://discord.com coolerUsername 1337passwordl33t\
 @dm_only()
 @logged_in()
 async def update(ctx, url: str, username: str, password: str):
-    if any(char in username or char in password for char in NOT_ALLOWED):
-        await ctx.send(":x: Character not allowed")
-        return
-
     masterpass = get_password(ctx.author.id)
-    enc_username, err = await encrypt(username, masterpass)
-    if err:
-        raise EncryptionError(err)
-    enc_password, err = await encrypt(password, masterpass)
-    if err:
-        raise EncryptionError(err)
+    enc_username = encrypt(username, masterpass)
+    enc_password = encrypt(password, masterpass)
 
-    updated = EntryHandler.add(
+    updated = EntryHandler.update(
         ctx.author.id,
         url,
         enc_username,
@@ -413,17 +350,6 @@ async def on_command_error(ctx, err):
             colour=discord.Colour.red()
         )
         await ctx.send(embed=embed)
-    elif isinstance(err, EncryptionError):
-        embed = discord.Embed(
-            title=":x: Encryption Error",
-            description=str(err),
-            colour=discord.Colour.red()
-        )
-        await ctx.send(embed=embed)
-    elif isinstance(err, ServerError):
-        print("Openssl Server error !")
-        print("Error message:", err)
-        await ctx.send(":x: Error")
     else:
         print("Uncaught error !")
         print("Error type:", type(err))

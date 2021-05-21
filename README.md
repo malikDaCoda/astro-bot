@@ -2,23 +2,49 @@
 
 ## How to run
 
-1. Change directory to `mate/app/` :  
+### Option 1 : directly on your machine
+
+1. Install python3 and pip.
+
+2. Install the package dependencies :  
 
 ```bash
-cd mate/app/
+pip3 install discord python-dotenv bcrypt validators pycryptodom
 ```
 
-2. Copy `example.env` to `.env` :  
+3. Change directory to `app/` :  
+
+```bash
+cd app
+```
+
+4. Copy `example.env` to `.env` :  
 
 ```bash
 cp example.env .env
 ```
 
-3. Put your discord token in `.env`
+4. Put your discord token in `.env`.
 
-4. Install docker and docker-compose
+5. Run the bot :  
 
-5. Run `docker-compose up --build`
+```bash
+python3 app.py
+```
+
+### Option 2 : using docker
+
+1. Install docker and docker-compose.
+
+2. Copy `app/example.env` to `app/.env` :  
+
+```bash
+cp app/example.env app/.env
+```
+
+3. Put your discord token in `app/.env`.
+
+4. Run `docker-compose up -d --build`.
 
 ## Project structure
 
