@@ -1,8 +1,4 @@
-FROM ubuntu:latest
-
-RUN apt-get update && \
-    apt-get install -y python3 python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+FROM python:3.6
 
 RUN useradd astro
 
@@ -12,9 +8,10 @@ COPY run.sh /
 
 WORKDIR /app
 
-RUN python3 -m pip install -r requirements.txt && \
-    chmod +x app.py /run.sh && \
+RUN chmod +x app.py /run.sh && \
     chown -R astro:astro .
+
+RUN python -m pip install -r requirements.txt
 
 USER astro
 
