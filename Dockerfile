@@ -6,14 +6,16 @@ RUN apt-get update && \
 
 RUN useradd astro
 
-COPY app /app
+COPY app /app/
+
+COPY run.sh /
 
 WORKDIR /app
 
 RUN python3 -m pip install -r requirements.txt && \
-    chmod +x app.py && \
+    chmod +x app.py /run.sh && \
     chown -R astro:astro .
 
 USER astro
 
-ENTRYPOINT ["/app/app.py"]
+ENTRYPOINT ["/run.sh"]

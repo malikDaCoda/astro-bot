@@ -3,16 +3,20 @@
 
 import sqlite3
 from sqlite3 import Error
-from os import path
+from os import path, getenv
 import time
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 #
 # Constants
 #
 
-DB_NAME = "data.db"
-LOG_FILE = "db-error-log.txt"
+DB_FILE = getenv("DB_FILE")
+LOG_FILE = getenv("LOG_FILE")
+
 SQL_CREATE_USERS_TABLE = """
     CREATE TABLE IF NOT EXISTS users (
         uid TEXT PRIMARY KEY,
@@ -38,12 +42,12 @@ __CONN__ = None
 
 def __init__():
     global __CONN__
-    if not path.exists(DB_NAME):
-        __CONN__ = __create_connection__(DB_NAME)
+    if not path.exists(DB_FILE):
+        __CONN__ = __create_connection__(DB_FILE)
         __create_table__(SQL_CREATE_USERS_TABLE)
         __create_table__(SQL_CREATE_ENTRIES_TABLE)
     else:
-        __CONN__ = __create_connection__(DB_NAME)
+        __CONN__ = __create_connection__(DB_FILE)
 
 def __create_connection__(db_file):
     """Create a database connection to a SQLite3 database specified by db_file
