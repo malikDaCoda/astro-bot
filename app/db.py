@@ -3,19 +3,14 @@
 
 import sqlite3
 from sqlite3 import Error
-from os import path, getenv
+from os import path
 import time
 import sys
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import DB_FILE, LOG_FILE
 
 #
-# Constants
+# CREATE STATEMENTS
 #
-
-DB_FILE = getenv("DB_FILE")
-LOG_FILE = getenv("LOG_FILE")
 
 SQL_CREATE_USERS_TABLE = """
     CREATE TABLE IF NOT EXISTS users (

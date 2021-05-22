@@ -5,28 +5,14 @@ from discord.ext import commands
 from discord.ext.commands import dm_only
 from discord.ext.commands import Bot
 from discord.ext.tasks import loop
-import os
-import subprocess
-from dotenv import load_dotenv
-import bcrypt
 from db import UserHandler, EntryHandler
 import validators
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import json
-import socket
 import time
-from helpers.encryption import Encryption
-
-load_dotenv()
-
-# Constants
-
-TOKEN  = os.getenv("DISCORD_TOKEN")
-# minimum master password length
-MIN_LENGTH = 7
-# timeout in minutes for logging out an inactive user
-INACTIVE_TIMEOUT = 15
+from helpers.genpass import pass_generator
+from helpers.utils import *
+from errors import *
+from text import bot_description, help_messages
+from config import *
 
 # Global variables
 
@@ -40,39 +26,6 @@ client = Bot(
         no_category="Commands"
     )
 )
-
-# Helper functions
-
-# hash and salt password
-def hash(password):
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode(), salt)
-
-# checks if password is valid
-def valid_password(password, hashed):
-    return bcrypt.checkpw(password.encode(), hashed)
-
-# wrapper to encrypt data with password
-def encrypt(data, password):
-    e = Encryption(password.encode())
-    return e.encrypt(data.encode()).decode()
-
-# wrapper to decrypt data with password
-def decrypt(data, password):
-    e = Encryption(password.encode())
-    return e.decrypt(data.encode()).decode()
-
-# get master password of user
-def get_password(uid):
-    if users.get(uid):
-        return users[uid].get("masterpass")
-    return None
-
-# Exceptions
-
-# for authentification failures
-class AuthFailure(commands.errors.CheckFailure):
-    pass
 
 # Check decorators
 
@@ -94,20 +47,12 @@ def logged_out():
 
 # Commands
 
-@client.command(name="astro", help="Bot description")
+@client.command(name="astro", help=help_messages["astro"])
 async def astro(ctx):
     embed = discord.Embed(
         title="Astro - The Password Manager Bot",
-        description='''\
-This is Astro, a very secure password manager that you can rely on.
-You can store an endless amount of credentials for FREE!
-You don't risk losing your precious data thanks to OPENSSL, the latest encryption technology.
-Use our app now by DMing the bot and free yourself from the pain of remembering all your complex passwords.''',
+        description=bot_description,
         colour=discord.Colour.teal()
-    ).add_field(
-        name=":warning: DISCLAIMER",
-        value="DO NOT use any of your real credentials (This disclaimer is not part of the challenge)",
-        inline=False
     ).add_field(
         name=":information_source: Usage",
         value="Do !help in a DM for usage",
@@ -118,10 +63,7 @@ Use our app now by DMing the bot and free yourself from the pain of remembering 
 
 @client.command(
     name="login",
-    help='''\
-Login into your account.
-Example: !login 1337password\
-'''
+    help=help_messages["login"]
 )
 @dm_only()
 @logged_out()
@@ -139,10 +81,7 @@ async def login(ctx, masterpass: str):
 
 @client.command(
     name="register",
-    help='''\
-Register your account.
-Example: !register 1337password\
-'''
+    help=help_messages["register"]
 )
 @dm_only()
 @logged_out()
@@ -150,7 +89,7 @@ async def register(ctx, masterpass: str):
     if len(masterpass) < MIN_LENGTH:
         raise AuthFailure("Password is too short")
 
-    registered = UserHandler.add(ctx.author.id, ctx.author.name, hash(masterpass))
+    registered = UserHandler.add(ctx.author.id, ctx.author.name, hash_password(masterpass))
     if registered :
         await ctx.send(":white_check_mark: Registration successful")
         await login(ctx, masterpass)
@@ -159,7 +98,7 @@ async def register(ctx, masterpass: str):
 
 @client.command(
     name="logout",
-    help="Log out of your account"
+    help=help_messages["logout"]
 )
 @dm_only()
 @logged_in()
@@ -170,15 +109,12 @@ async def logout(ctx):
 @client.command(
     name="view",
     aliases=["v"],
-    help='''\
-View creds associated to URL (view all if no URL is provided)
-Example: !view https://discord.com\
-'''
+    help=help_messages["view"]
 )
 @dm_only()
 @logged_in()
 async def view(ctx, url: str=None):
-    masterpass = get_password(ctx.author.id)
+    masterpass = get_password(users, ctx.author.id)
     if url is not None:
         data = EntryHandler.get(ctx.author.id, url)
         if data is not None:
@@ -224,19 +160,19 @@ async def view(ctx, url: str=None):
 @client.command(
     name="add",
     aliases=["a"],
-    help='''\
-Add a new entry of credentials for specified URL
-Example: !add https://discord.com coolUsername 1337password\
-'''
+    help=help_messages["add"]
 )
 @dm_only()
 @logged_in()
-async def add(ctx, url: str, username: str, password: str):
+async def add(ctx, url: str, username: str, password: str=None):
     if not validators.url(url):
         await ctx.send(":x: Not a valid URL")
         return
 
-    masterpass = get_password(ctx.author.id)
+    if not password:
+        password = pass_generator()
+
+    masterpass = get_password(users, ctx.author.id)
     enc_username = encrypt(username, masterpass)
     enc_password = encrypt(password, masterpass)
 
@@ -254,15 +190,12 @@ async def add(ctx, url: str, username: str, password: str):
 @client.command(
     name="update",
     aliases=["u"],
-    help='''\
-Update credentials entry of specified URL
-Example: !update https://discord.com coolerUsername 1337passwordl33t\
-'''
+    help=help_messages["update"]
 )
 @dm_only()
 @logged_in()
 async def update(ctx, url: str, username: str, password: str):
-    masterpass = get_password(ctx.author.id)
+    masterpass = get_password(users, ctx.author.id)
     enc_username = encrypt(username, masterpass)
     enc_password = encrypt(password, masterpass)
 
@@ -280,10 +213,7 @@ async def update(ctx, url: str, username: str, password: str):
 @client.command(
     name="delete",
     aliases=["d"],
-    help='''\
-Delete entry specified by URL
-Example: !delete https://discord.com\
-'''
+    help=help_messages["delete"]
 )
 @dm_only()
 @logged_in()
@@ -293,6 +223,21 @@ async def delete(ctx, url: str):
         await ctx.send(f":white_check_mark: Credentials deleted for <{url}>")
     else:
         await ctx.send(":x: This URL doesn't exist")
+
+@client.command(
+    name="change",
+    help=help_messages["change"]
+)
+@dm_only()
+@logged_in()
+async def change(ctx, masterpass: str):
+    if len(masterpass) < MIN_LENGTH:
+        raise AuthFailure("Password is too short")
+
+    changed = UserHandler.update(ctx.author.id, ctx.author.name, hash_password(masterpass))
+    if changed :
+        await ctx.send(":white_check_mark: Master password changed successfully")
+        users[uid]["masterpass"] = masterpass
 
 # Loops for background tasks
 
@@ -317,44 +262,12 @@ async def update_lastactive(message):
     uid = message.author.id
     if not isinstance(message.channel, discord.DMChannel):
         return
-    if uid not in users:
-        return
-
-    users[uid]["lastactive"] = time.time()
+    if uid in users:
+        users[uid]["lastactive"] = time.time()
 
 @client.event
 async def on_command_error(ctx, err):
-    if isinstance(err, commands.errors.CommandNotFound):
-        return
-    elif isinstance(err, commands.errors.MissingRequiredArgument):
-        await ctx.send(f":x: Missing a required argument. Do !help {ctx.command}")
-    elif isinstance(err, commands.errors.BadArgument):
-        await ctx.send(f":x: Bad argument. Do !help {ctx.command}")
-    elif isinstance(err, commands.errors.ExpectedClosingQuoteError):
-        await ctx.send(f":x: {err}")
-    elif isinstance(err, commands.errors.UnexpectedQuoteError):
-        await ctx.send(f":x: {err}")
-    elif isinstance(err, commands.errors.InvalidEndOfQuotedStringError):
-        await ctx.send(f":x: {err}")
-    elif isinstance(err, commands.errors.PrivateMessageOnly):
-        embed = discord.Embed(
-            title=":lock: DMs only",
-            description="This service is only available in direct messages",
-            colour=discord.Colour.red()
-        )
-        await ctx.send(embed=embed)
-    elif isinstance(err, AuthFailure):
-        embed = discord.Embed(
-            title=":x: Authentification failure",
-            description=str(err),
-            colour=discord.Colour.red()
-        )
-        await ctx.send(embed=embed)
-    else:
-        print("Uncaught error !")
-        print("Error type:", type(err))
-        print("Error message:", err)
-        await ctx.send(":x: Error")
+    error_handler(ctx, err)
 
 if __name__ == "__main__":
     logout_inactive.start()
