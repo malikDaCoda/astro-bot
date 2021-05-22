@@ -3,12 +3,12 @@
 ```txt
 bot-project-name/
 └───app/
-    └───models/
+│   └───models/
+│   └───helpers/
 │   │   config.py
-│   │   helpers.py
 │   │   db.py
 │   │   errors.py
-│   │   help.py
+│   │   text.py
 │   │   .env
 │   └   app.py
 │    
@@ -17,33 +17,33 @@ bot-project-name/
 
 ## app/models : class models (optional)
 
-Contains files for class models of objects used by the application (example: User, Entry, ...).
+Contains files for class models of objects used by the application.
 
 ## app/config.py : config file
 
 This file acts as the central configuration file that will be used by the rest of the Python files.  
 It includes the initialized Discord bot client, database URI, API keys, application configurables, ...
 
-## app/helpers.py : helper methods
+## app/helpers/ : helper modules
 
-This file contains helper methods that can be used by `app.py` or `db.py`.  
-For example, some methods to encrypt and decrypt the credentials.
+This file contains helper modules that can be used by `app.py` or `db.py`.  
+For example, a modules for encryption and decryption, another module for password generation, ...
 
 ## app/db.py : database handlers
 
 This file will cover interactions with the database (CRUD operations).
 
-## app/errors.py : errors and exception
+## app/errors.py : errors and exceptions
 
-This file defines custom exceptions.
+This file defines custom exceptions and error handlers.
 
 ## app/.env : environment variables
 
 This file contains environment variables (discord bot token, configurables, ...)
 
-## app/help.py : help text for each command
+## app/text.py : help and description text
 
-Contains help text for each command in app/app.py
+Contains help text for each command in app/app.py, and some more description text
 
 ## app/app.py : main application
 

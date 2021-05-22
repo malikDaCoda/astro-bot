@@ -23,7 +23,7 @@ cp app/example.env app/.env
 5. Run the bot :  
 
 ```bash
-python app/pp.py
+python app/app.py
 ```
 
 ### Option 2 : using docker
