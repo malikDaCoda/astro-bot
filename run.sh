@@ -1,4 +1,3 @@
 #!/bin/sh
 
-cd /app
-./app.py
+/app/app.py

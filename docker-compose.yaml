@@ -9,4 +9,4 @@ services:
           cpus: '0.5'
           memory: 100M
     volumes:
-      - ./app/db/:/app/db/
+      - ./db/:/db/

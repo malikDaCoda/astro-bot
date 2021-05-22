@@ -9,27 +9,21 @@
 2. Install the package dependencies :  
 
 ```bash
-python3 -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-3. Change directory to `app/` :  
+3. Copy `app/example.env` to `app/.env` :  
 
 ```bash
-cd app
+cp app/example.env app/.env
 ```
 
-4. Copy `example.env` to `.env` :  
-
-```bash
-cp example.env .env
-```
-
-4. Put your discord token in `.env`.
+4. Put your discord token in `app/.env`.
 
 5. Run the bot :  
 
 ```bash
-python3 app.py
+python app/pp.py
 ```
 
 ### Option 2 : using docker
