@@ -12,7 +12,7 @@ WORKDIR /app
 
 RUN python3 -m pip install -r requirements.txt && \
     chmod +x app.py && \
-    chown -R astro:astro
+    chown -R astro:astro .
 
 USER astro
 
