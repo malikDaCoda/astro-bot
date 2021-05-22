@@ -231,7 +231,7 @@ async def delete(ctx, url: str):
 @dm_only()
 @logged_in()
 async def change(ctx, masterpass: str):
-    uid = message.author.id
+    uid = ctx.author.id
     if len(masterpass) < MIN_LENGTH:
         raise AuthFailure("Password is too short")
 
@@ -260,7 +260,7 @@ async def on_ready():
 
 @client.listen("on_message")
 async def update_lastactive(message):
-    uid = ctx.author.id
+    uid = message.author.id
     if not isinstance(message.channel, discord.DMChannel):
         return
     if uid in users:
