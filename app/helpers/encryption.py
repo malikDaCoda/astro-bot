@@ -6,7 +6,6 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto import Random as CryptoRandom
 
-
 class Encryption():
 
     def __init__(self, key):

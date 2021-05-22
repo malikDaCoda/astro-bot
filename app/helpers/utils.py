@@ -1,5 +1,5 @@
 import bcrypt
-from encryption import Encryption
+from helpers.encryption import Encryption
 
 # hash and salt password
 def hash_password(password):
