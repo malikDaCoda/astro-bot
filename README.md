@@ -26,7 +26,9 @@ cp app/example.env app/.env
 python app/app.py
 ```
 
-### Option 2 : using docker
+### Option 2 : using docker (not working)
+
+**Note :** The docker method is not working, a fix is in the works
 
 1. Install docker and docker-compose.
 
