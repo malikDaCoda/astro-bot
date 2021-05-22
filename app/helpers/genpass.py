@@ -1,3 +1,4 @@
+import random
 from config import PASSWORD_LEN
 
 # give the complex password generated with random
